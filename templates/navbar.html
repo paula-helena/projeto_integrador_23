@@ -1,0 +1,14 @@
+<nav class="main-nav">
+    <div class="nav-brand-group">
+        <strong class="nav-brand">📊 Sistema de Contribuição</strong>
+        <a href="{{ url_for('listagem') }}" class="nav-link">Listagem</a>
+        <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+    </div>
+
+    <div class="nav-user-group">
+        <span class="nav-user-info">
+            👋 Olá, <strong>{{ current_user.usuario_nome }}</strong>
+        </span>
+        <a href="{{ url_for('logout') }}" class="btn-logout">Sair</a>
+    </div>
+</nav>

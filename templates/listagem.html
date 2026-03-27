@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Números</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container">
+        <h2>Controle de Blocos</h2>
+        
+        <form action="/listagem" method="GET" class="filter-panel">
+            <input type="text" name="busca" value="{{ termo or '' }}" placeholder="Nome, Clube, WhatsApp..." style="flex:2; padding:8px;">
+            <select name="status" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                <option value="">Status...</option>
+                <option value="disponivel" {% if status_filtro == 'disponivel' %}selected{% endif %}>⚪ Disponível</option>
+                <option value="reservado" {% if status_filtro == 'reservado' %}selected{% endif %}>🟡 Reservado</option>
+                <option value="pago" {% if status_filtro == 'pago' %}selected{% endif %}>🔵 Pago 30%</option>
+                <option value="repassado" {% if status_filtro == 'repassado' %}selected{% endif %}>🟢 Repassado (Fim)</option>
+            </select>
+            <select name="entrega" style="flex:1; padding:8px;">
+                <option value="">Entrega...</option>
+                <option value="em_maos" {% if entrega_filtro == 'em_maos' %}selected{% endif %}>🤝 Mãos</option>
+                <option value="correios" {% if entrega_filtro == 'correios' %}selected{% endif %}>📦 Correios</option>
+            </select>
+            <button type="submit" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px;">Filtrar</button>
+        </form>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Numeração</th>
+                        <th>Responsável</th>
+                        <th>Clube</th>
+                        <th>Entrega</th>
+                        <th>Status</th>
+                        <th>Ação</th>
+                        <th>Observações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bloco in blocos %}
+                    <tr>
+                        <td>{{ bloco.bloco_id }}</td>
+                        <td>{{ "%04d" | format(bloco.bloco_numero_inicial) }} a {{ "%04d" | format(bloco.bloco_numero_final) }}</td>
+
+                        {# Exibe o nome do responsável se existir, caso contrário exibe um traço #}
+                        <td>{{ bloco.responsavel.responsavel_nome if bloco.responsavel else '-' }}</td>
+
+                        {# Verifica se há responsável E se esse responsável tem um clube vinculado #}
+                        <td>{{ bloco.responsavel.clube.clube_nome if bloco.responsavel and bloco.responsavel.clube else '-' }}</td>
+
+                        <td>
+                            {% if bloco.bloco_forma_entrega == 'em_maos' %}🤝 Mãos
+                            {% elif bloco.bloco_forma_entrega == 'correios' %}📦 Correios
+                            {% else %}-{% endif %}
+                        </td>
+
+                        <td>
+                            {# Lógica Visual de Cores #}
+                            {% set total_rep = bloco.repasses | map(attribute='repasse70_valor') | sum | float %}
+                            {% set pago30 = bloco.pagamento30 and bloco.pagamento30.pagamento30_pago %}
+                            
+                            {% if total_rep >= 700 %}
+                                <span class="status repassado">Repassado</span>
+                            {% elif pago30 %}
+                                <span class="status pago">Pago 30%</span>
+                            {% elif bloco.responsavel_id %}
+                                <span class="status reservado">Reservado</span>
+                            {% else %}
+                                <span class="status disponivel">Disponível</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td><a href="/bloco/{{ bloco.bloco_id }}" class="btn-reservar">Gerenciar</a></td>
+                        
+                        <td style="font-size: 0.85em; color: #555; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ bloco.bloco_observacoes or '' }}">
+                            {{ bloco.bloco_observacoes or '-' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

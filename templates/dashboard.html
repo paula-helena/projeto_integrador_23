@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analítico - Sistema de Contribuição Premiável</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+
+{% include 'navbar.html' %}
+
+
+    <div class="container" style="max-width: 1100px; margin: auto; padding: 20px;">
+        <header style="margin-bottom: 30px;">
+            <h2>📊 Dashboard de Gestão Estratégica</h2>
+            <p style="color: #666;">Acompanhamento em tempo real dos 10.000 números.</p>
+        </header>
+
+        <form action="/dashboard" method="GET" class="filter-panel">
+            <div class="filter-group">
+                <label>Recorte por Clube:</label>
+                <select name="clube_id">
+                    <option value="">-- Todos os Clubes --</option>
+                    {% for c in clubes %}
+                        <option value="{{ c.clube_id }}" {% if clube_sel == c.clube_id %}selected{% endif %}>
+                            {{ c.clube_nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Data Início (30%):</label>
+                <input type="date" name="data_inicio" value="{{ request.args.get('data_inicio', '') }}">
+            </div>
+            <div class="filter-group">
+                <label>Data Fim (30%):</label>
+                <input type="date" name="data_fim" value="{{ request.args.get('data_fim', '') }}">
+            </div>
+            <button type="submit" class="btn-update">🔄 Atualizar Indicadores</button>
+            <a href="/dashboard" style="font-size: 0.8em; color: #888; text-decoration: none;">Limpar Filtros</a>
+        </form>
+
+        <div class="dashboard-grid">
+            <div class="chart-card">
+                <h3>Distribuição por Status</h3>
+                <p style="font-size: 0.8em; color: #999; margin-bottom: 15px;">Filtro aplicado para os blocos selecionados.</p>
+                <canvas id="chartStatus"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>Saúde Financeira (R$)</h3>
+                <p style="font-size: 0.8em; color: #999; margin-bottom: 15px;">Custas (30%) vs. Repasses (70%)</p>
+                <canvas id="chartFinanceiro"></canvas>
+            </div>
+        </div>
+
+        <footer style="margin-top: 40px; border-top: 1px solid #ddd; padding-top: 20px; text-align: center;">
+            <a href="{{ url_for('listagem') }}" class="btn-voltar" style="text-decoration: none; color: #007bff; font-weight: bold;">← Voltar para Controle de Blocos</a>
+        </footer>
+    </div>
+
+    <script>
+        // Configuração Global de Cores para sincronia com a Lista
+        const coresStatus = {
+            disponivel: '#e9ecef', // Cinza
+            reservado: '#ffc107',  // Amarelo
+            pago: '#007bff',       // Azul
+            repassado: '#28a745'   // Verde
+        };
+
+        // 1. Renderização do Gráfico de Status (Pizza)
+        const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+        new Chart(ctxStatus, {
+            type: 'pie',
+            data: {
+                labels: {{ labels_status | safe }},
+                datasets: [{
+                    data: {{ data_status | safe }},
+                    backgroundColor: [coresStatus.disponivel, coresStatus.reservado, coresStatus.pago, coresStatus.repassado],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // 2. Renderização do Gráfico Financeiro (Barras)
+        const ctxFin = document.getElementById('chartFinanceiro').getContext('2d');
+        new Chart(ctxFin, {
+            type: 'bar',
+            data: {
+                labels: ['Custas ONG (30%)', 'Repasses Entidades (70%)'],
+                datasets: [{
+                    label: 'Valores Arrecadados',
+                    data: [{{ financeiro_30 }}, {{ financeiro_70 }}],
+                    backgroundColor: [coresStatus.pago, coresStatus.repassado]
+                }]
+            },
+            options: {
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        ticks: { callback: function(value) { return 'R$ ' + value.toFixed(2); } }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

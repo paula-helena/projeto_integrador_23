@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Sistema de Contribuição</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+
+        <div class="auth-wrapper">
+    <div class="auth-container">
+        <h2>📝 Novo Cadastro</h2>
+        <p>Crie sua conta para gerenciar as rifas</p>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="flash-msg">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('registrar') }}">
+            <div class="form-group">
+                <label>Nome Completo:</label>
+                <input type="text" name="nome" placeholder="Digite seu nome" required>
+            </div>
+            <div class="form-group">
+                <label>E-mail:</label>
+                <input type="email" name="email" placeholder="seu@email.com" required>
+            </div>
+            <div class="form-group">
+                <label>Senha:</label>
+                <input type="password" name="senha" placeholder="Mínimo 6 caracteres" required>
+            </div>
+            <button type="submit" class="btn-auth">Finalizar Cadastro</button>
+        </form>
+
+        <div class="auth-footer">
+            Já possui uma conta? <a href="{{ url_for('login') }}">Voltar para o Login</a>
+        </div>
+    </div>
+    </div>
+</body>
+</html>
