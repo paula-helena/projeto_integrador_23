@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Contribuição</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+  
+    
+  
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <h2>🔒 Acesso Restrito</h2>
+        <p>Sistema de Gestão de Contribuições</p>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="flash-msg">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="form-group">
+                <label>E-mail Corporativo:</label>
+                <input type="email" name="email" placeholder="exemplo@email.com" required>
+            </div>
+            <div class="form-group">
+                <label>Senha:</label>
+                <input type="password" name="senha" placeholder="Sua senha" required>
+            </div>
+            <button type="submit" class="btn-auth">Entrar no Sistema</button>
+        </form>
+
+        <div class="auth-footer">
+            Ainda não tem acesso? <a href="{{ url_for('registrar') }}">Crie sua conta aqui</a>
+        </div>
+        <div class="auth-footer">
+    <a href="#" onclick="alert('Por segurança, solicite o reset de senha ao administrador.')">Esqueci minha senha</a>
+</div>
+    </div>
+    </div>
+</body>
+</html>

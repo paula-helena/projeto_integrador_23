@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciar Bloco {{ bloco.bloco_id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container" style="max-width: 650px;">
+        <div class="form-section" style="background: #2c3e50; color: white; text-align: center; border: none;">
+            <h2 style="color: white; margin: 0;">Bloco {{ bloco.bloco_id }}</h2>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">
+                🔢 Números: {{ "%04d" | format(bloco.bloco_numero_inicial) }} a {{ "%04d" | format(bloco.bloco_numero_final) }}
+            </p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for m in messages %}
+                    <div class="flash-msg">{{ m }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="/bloco/{{ bloco.bloco_id }}/salvar" method="POST" enctype="multipart/form-data">
+            
+            <div class="form-section">
+                <h3 style="color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 5px;">1. Responsável e Entrega</h3>
+                
+                {% if bloco.responsavel %}
+                <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid #007bff; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
+                    <span style="font-size: 1.1em;">👤 <strong>Dono:</strong> {{ bloco.responsavel.responsavel_nome }}</span><br>
+                    <span style="color: #555;">🏢 {{ bloco.responsavel.clube.clube_nome }}</span><br>
+                    <a href="https://wa.me/{{ bloco.responsavel.responsavel_contato|replace(' ','')|replace('-','') }}" 
+                       target="_blank" style="display: inline-block; margin-top: 8px; color: #25d366; font-weight: bold; text-decoration: none;">
+                       🟢 WhatsApp: {{ bloco.responsavel.responsavel_contato }}
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label>Substituir Responsável:</label>
+                    <select name="responsavel_id">
+                        <option value="">-- Selecione na Lista --</option>
+                        {% for r in responsaveis %}
+                            <option value="{{ r.responsavel_id }}" {% if bloco.responsavel_id == r.responsavel_id %}selected{% endif %}>
+                                {{ r.responsavel_nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="background: #fdfdfd; padding: 15px; border: 1px dashed #007bff; border-radius: 8px; margin-top: 10px;">
+                    <p style="margin-top: 0; font-weight: bold; color: #007bff;">➕ Cadastrar Novo Responsável:</p>
+                    <div style="display: grid; gap: 10px;">
+                        <input type="text" name="novo_responsavel_nome" placeholder="Nome Completo">
+                        <input type="text" name="novo_responsavel_contato" placeholder="WhatsApp / Celular">
+                        <select name="clube_id_selecionado">
+                            <option value="">-- Vincular a Clube Existente --</option>
+                            {% for c in clubes %}<option value="{{ c.clube_id }}">{{ c.clube_nome }}</option>{% endfor %}
+                        </select>
+                        <input type="text" name="novo_responsavel_clube" placeholder="OU Digite Nome do Novo Clube">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Forma de Entrega:</label>
+                    <select name="forma_entrega">
+                        <option value="">-- Não Definida --</option>
+                        <option value="em_maos" {% if bloco.bloco_forma_entrega == 'em_maos' %}selected{% endif %}>🤝 Em Mãos</option>
+                        <option value="correios" {% if bloco.bloco_forma_entrega == 'correios' %}selected{% endif %}>📦 Correios</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 style="color: #6c757d; border-bottom: 2px solid #6c757d; padding-bottom: 5px;">2. Financeiro (30% ONG)</h3>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6;">
+                    <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1.05em;">
+                        <input type="checkbox" name="pagamento_pago" value="sim" style="width: 20px; height: 20px;" {% if bloco.pagamento30 and bloco.pagamento30.pagamento30_pago %}checked{% endif %}> 
+                        <strong style="color: #2c3e50;">Pagamento Confirmado (R$ 300,00)</strong>
+                    </label>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Data do Recebimento:</label>
+                        <input type="date" name="pagamento_data" value="{% if bloco.pagamento30 and bloco.pagamento30.pagamento30_data %}{{ bloco.pagamento30.pagamento30_data.strftime('%Y-%m-%d') }}{% endif %}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Comprovante (Pix/Transferência):</label>
+                        <input type="file" name="comprovante_30">
+                        {% if bloco.pagamento30 and bloco.pagamento30.pagamento30_comprovante %}
+                            <div style="margin-top: 10px; background: white; padding: 8px; border-radius: 4px; border: 1px solid #eee;">
+                                🖼️ <a href="{{ url_for('static', filename='uploads/comprovantes/' ~ bloco.pagamento30.pagamento30_comprovante) }}" target="_blank">Ver Arquivo</a> 
+                                <span style="margin: 0 10px; color: #ccc;">|</span>
+                                <a href="{{ url_for('cancelar_30', id_bloco=bloco.bloco_id) }}" style="color: #dc3545; font-weight: bold; text-decoration: none;" onclick="return confirm('Excluir arquivo permanentemente?')">🗑️ Excluir</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 style="color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 5px;">3. Repasses (70% Entidades)</h3>
+                
+                <div style="margin-bottom: 15px;">
+                    {% if atingiu_70 %}
+                        <div class="badge repassado" style="width: 100%; padding: 10px; font-size: 1em;">✅ Repasse Total Atingido: R$ {{ "%.2f" | format(total_repassado) }}</div>
+                    {% else %}
+                        <div class="badge reservado" style="width: 100%; padding: 10px; font-size: 1em;">⏳ Falta: R$ {{ "%.2f" | format(700 - total_repassado) }} (Total: R$ {{ "%.2f" | format(total_repassado) }})</div>
+                    {% endif %}
+                </div>
+
+                {% for rep in bloco.repasses %}
+                <div style="background: white; border: 1px solid #e0e0e0; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #28a745;">
+                    <div>
+                        <span class="valor" style="font-size: 1.1em;">R$ {{ "%.2f" | format(rep.repasse70_valor) }}</span><br>
+                        <small style="color: #666;">Destino: {{ rep.destinatario.destinatario_nome }}</small>
+                    </div>
+                    <div>
+                        {% if rep.repasse70_comprovante %}<a href="{{ url_for('static', filename='uploads/comprovantes/' ~ rep.repasse70_comprovante) }}" target="_blank" class="btn-primary" style="padding: 5px 10px; font-size: 12px; text-decoration: none;">📄 Ver</a>{% endif %}
+                        <a href="{{ url_for('remover_repasse', id_bloco=bloco.bloco_id, id_repasse=rep.repasse70_id) }}" style="color: #dc3545; margin-left: 10px;" onclick="return confirm('Remover este repasse?')">✖</a>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div style="background: #f4fff4; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #c3e6cb;">
+                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #155724;">💸 Novo Repasse:</p>
+                    <div style="display: grid; gap: 10px;">
+                        <input type="number" step="0.01" name="novo_repasse_valor" placeholder="Valor (R$)">
+                        <select name="novo_repasse_destinatario">
+                            <option value="">-- Selecionar Entidade --</option>
+                            {% for d in destinatarios %}<option value="{{ d.destinatario_id }}">{{ d.destinatario_nome }}</option>{% endfor %}
+                        </select>
+                        <div style="border-top: 1px solid #c3e6cb; padding-top: 10px;">
+                            <input type="text" name="novo_destinatario_nome" placeholder="OU Nova Entidade">
+                            <select name="novo_destinatario_tipo" style="margin-top: 5px;">
+                                <option value="entidade">Entidade Geral</option>
+                                <option value="fundacao">Fundação</option>
+                                <option value="clube">Clube</option>
+                            </select>
+                        </div>
+                        <input type="file" name="comprovante_70">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 style="color: #f59f00; border-bottom: 2px solid #f59f00; padding-bottom: 5px;">4. Observações Gerais</h3>
+                <textarea name="bloco_observacoes" rows="3" placeholder="Anotações importantes...">{{ bloco.bloco_observacoes or '' }}</textarea>
+                {% if bloco.bloco_observacoes %}
+                <div class="obs-box">
+                    <strong>📌 Histórico:</strong><br>{{ bloco.bloco_observacoes }}
+                </div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn-salvar" style="background: #1a73e8; height: 60px; font-size: 18px; box-shadow: 0 4px 10px rgba(26, 115, 232, 0.3);">
+                💾 Salvar Todas as Alterações
+            </button>
+            
+            <a href="{{ url_for('listagem') }}" style="display: block; text-align: center; margin-top: 20px; color: #666; text-decoration: none;">
+                ← Cancelar e Voltar para a Lista
+            </a>
+        </form>
+    </div>
+</body>
+</html>
