@@ -20,12 +20,12 @@
                 <option value="pago" {% if status_filtro == 'pago' %}selected{% endif %}>🔵 Pago 30%</option>
                 <option value="repassado" {% if status_filtro == 'repassado' %}selected{% endif %}>🟢 Repassado (Fim)</option>
             </select>
-            <select name="entrega" style="flex:1; padding:8px;">
+            <select name="entrega" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
                 <option value="">Entrega...</option>
                 <option value="em_maos" {% if entrega_filtro == 'em_maos' %}selected{% endif %}>🤝 Mãos</option>
                 <option value="correios" {% if entrega_filtro == 'correios' %}selected{% endif %}>📦 Correios</option>
             </select>
-            <button type="submit" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px;">Filtrar</button>
+            <button type="submit" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor: pointer;">Filtrar</button>
         </form>
 
         <div class="table-container">
@@ -48,10 +48,8 @@
                         <td>{{ bloco.bloco_id }}</td>
                         <td>{{ "%04d" | format(bloco.bloco_numero_inicial) }} a {{ "%04d" | format(bloco.bloco_numero_final) }}</td>
 
-                        {# Exibe o nome do responsável se existir, caso contrário exibe um traço #}
                         <td>{{ bloco.responsavel.responsavel_nome if bloco.responsavel else '-' }}</td>
 
-                        {# Verifica se há responsável E se esse responsável tem um clube vinculado #}
                         <td>{{ bloco.responsavel.clube.clube_nome if bloco.responsavel and bloco.responsavel.clube else '-' }}</td>
 
                         <td>
@@ -61,7 +59,6 @@
                         </td>
 
                         <td>
-                            {# Lógica Visual de Cores #}
                             {% set total_rep = bloco.repasses | map(attribute='repasse70_valor') | sum | float %}
                             {% set pago30 = bloco.pagamento30 and bloco.pagamento30.pagamento30_pago %}
                             
@@ -76,7 +73,7 @@
                             {% endif %}
                         </td>
                         
-                        <td><a href="/bloco/{{ bloco.bloco_id }}" class="btn-reservar">Gerenciar</a></td>
+                        <td><a href="/bloco/{{ bloco.bloco_id }}" class="btn-update" style="text-decoration: none; padding: 5px 10px; font-size: 0.8em;">Gerenciar</a></td>
                         
                         <td style="font-size: 0.85em; color: #555; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ bloco.bloco_observacoes or '' }}">
                             {{ bloco.bloco_observacoes or '-' }}
@@ -86,6 +83,31 @@
                 </tbody>
             </table>
         </div>
-    </div>
+
+        <div class="pagination-container">
+            <div class="pagination-info">
+                Página <strong>{{ pagination.page }}</strong> de <strong>{{ pagination.pages }}</strong> 
+                <span style="margin-left: 10px; color: #999;">(Total: {{ pagination.total }} blocos)</span>
+            </div>
+            
+            <div class="pagination-buttons">
+                {% if pagination.has_prev %}
+                    <a href="{{ url_for('listagem', page=pagination.prev_num, busca=termo, status=status_filtro, entrega=entrega_filtro) }}" class="page-btn btn-prev">
+                        &laquo; Anterior
+                    </a>
+                {% else %}
+                    <span class="page-btn btn-disabled">&laquo; Anterior</span>
+                {% endif %}
+
+                {% if pagination.has_next %}
+                    <a href="{{ url_for('listagem', page=pagination.next_num, busca=termo, status=status_filtro, entrega=entrega_filtro) }}" class="page-btn btn-next">
+                        Próxima &raquo;
+                    </a>
+                {% else %}
+                    <span class="page-btn btn-disabled">Próxima &raquo;</span>
+                {% endif %}
+            </div>
+        </div>
+        </div>
 </body>
 </html>

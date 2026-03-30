@@ -1,4 +1,4 @@
-USE sistema_rifas;
+USE laisguer_projeto_integrador_23;
 
 CREATE TABLE Clube (
     clube_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -18,21 +18,23 @@ CREATE TABLE Responsavel (
         REFERENCES Clube(clube_id)
 );
 
-CREATE TABLE BlocoRifa (
+CREATE TABLE Bloco (
 
     bloco_id INT AUTO_INCREMENT PRIMARY KEY,
 
     bloco_numero_inicial INT NOT NULL,
     bloco_numero_final INT NOT NULL,
 
-    bloco_valor_rifa DECIMAL(10,2),
-    bloco_quantidade_rifas INT,
+    bloco_valor_numero DECIMAL(10,2),
+    bloco_quantidade_numeros INT,
     bloco_valor_total DECIMAL(10,2),
 
     bloco_forma_entrega ENUM('em_maos','correios'),
     bloco_data_entrega DATE,
 
     responsavel_id INT,
+
+    bloco_observacoes TEXT,
 
     CONSTRAINT fk_bloco_responsavel
         FOREIGN KEY (responsavel_id)
@@ -72,7 +74,7 @@ CREATE TABLE Pagamento30 (
 
     CONSTRAINT fk_pagamento_bloco
         FOREIGN KEY (bloco_id)
-        REFERENCES BlocoRifa(bloco_id)
+        REFERENCES Bloco(bloco_id)
 );
 
 CREATE TABLE Repasse70 (
@@ -93,7 +95,7 @@ CREATE TABLE Repasse70 (
 
     CONSTRAINT fk_repasse_bloco
         FOREIGN KEY (bloco_id)
-        REFERENCES BlocoRifa(bloco_id),
+        REFERENCES Bloco(bloco_id),
 
     CONSTRAINT fk_repasse_destinatario
         FOREIGN KEY (destinatario_id)
@@ -117,7 +119,7 @@ CREATE TABLE TransferenciaBloco (
 
     CONSTRAINT fk_transferencia_bloco
         FOREIGN KEY (bloco_id)
-        REFERENCES BlocoRifa(bloco_id),
+        REFERENCES Bloco(bloco_id),
 
     CONSTRAINT fk_transferencia_origem
         FOREIGN KEY (responsavel_origem_id)
@@ -129,10 +131,10 @@ CREATE TABLE TransferenciaBloco (
 
 );
 
-ALTER TABLE BlocoRifa ADD COLUMN bloco_observacoes TEXT;
 
 
-INSERT INTO clube (clube_nome) VALUES 
+
+INSERT INTO Clube (clube_nome) VALUES 
 ('Rotary Club do Rio de Janeiro-Rocha Miranda'),
 ('Rotary Club do Rio de Janeiro-Tijuca'),
 ('Rotary Club Satélite de Angra dos Reis - Mangaratiba'),
@@ -204,25 +206,8 @@ INSERT INTO clube (clube_nome) VALUES
 ('Rotary Club de Campo Grande');
 
 
-SET SQL_SAFE_UPDATES = 0;
-
-SET SQL_SAFE_UPDATES = 0;
-SET FOREIGN_KEY_CHECKS = 0;
-
-DELETE FROM responsavel WHERE responsavel_nome = 'teste1';
-DELETE FROM clube WHERE clube_nome = 'clubeteste';
-
-SET FOREIGN_KEY_CHECKS = 1;
-SET SQL_SAFE_UPDATES = 1;
 
 
-RENAME TABLE BlocoRifa TO Bloco;
-
-ALTER TABLE BLOCO 
-RENAME COLUMN bloco_valor_rifa TO bloco_valor_numero;
-
-ALTER TABLE BLOCO 
-RENAME COLUMN bloco_quantidade_rifas TO bloco_quantidade_numeros;
 
 CREATE TABLE Usuario (
 usuario_id INT AUTO_INCREMENT PRIMARY KEY, 
