@@ -229,42 +229,56 @@ def remover_repasse(id_bloco, id_repasse):
     return redirect(url_for('gerenciar_bloco', id_bloco=id_bloco))
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    # Captura os filtros da URL (ex: ?clube_id=1&data_inicio=2026-01-01)
+    # 1. Captura os filtros da URL
     clube_id = request.args.get('clube_id')
     data_ini = request.args.get('data_inicio')
     data_fim = request.args.get('data_fim')
 
-    # Query base para os blocos
-    query_blocos = Bloco.query.join(Responsavel, isouter=True)
-    
-    # Filtro por Clube (Customização)
-    if clube_id:
-        query_blocos = query_blocos.filter(Responsavel.clube_id == clube_id)
+    # 2. Subquery de Repasses (Calcula a soma de repasses por bloco no MySQL)
+    subquery_rep = db.session.query(
+        Repasse70.bloco_id, 
+        func.sum(Repasse70.repasse70_valor).label('total')
+    ).group_by(Repasse70.bloco_id).subquery()
 
-    # Filtro por Data no Pagamento30
+    # 3. Query Base para Contagens (Aplicando seus filtros de Clube e Data)
+    query_base = db.session.query(Bloco).join(Responsavel, isouter=True)
+    
+    if clube_id:
+        query_base = query_base.filter(Responsavel.clube_id == clube_id)
+    
     if data_ini and data_fim:
-        query_blocos = query_blocos.join(Pagamento30).filter(
+        # Se filtrar por data, precisamos garantir o join com Pagamento30
+        query_base = query_base.join(Pagamento30).filter(
             Pagamento30.pagamento30_data.between(data_ini, data_fim)
         )
 
-    # --- PROCESSAMENTO DOS DADOS FILTRADOS ---
-    blocos_filtrados = query_blocos.all()
-    total_count = len(blocos_filtrados)
+    # --- EXECUÇÃO DAS CONTAGENS DIRETAMENTE NO BANCO ---
     
-    # Cálculo de Status para a Pizza (Dinâmico conforme o filtro)
-    repassados = 0
-    pagos = 0
-    reservados = 0
-    for b in blocos_filtrados:
-        total_rep = sum(float(r.repasse70_valor or 0) for r in b.repasses)
-        if total_rep >= 700: repassados += 1
-        elif b.pagamento30 and b.pagamento30.pagamento30_pago: pagos += 1
-        elif b.responsavel_id: reservados += 1
-    
+    # Total de blocos (dentro do filtro aplicado)
+    total_count = query_base.count()
+
+    # Repassados (Soma de repasses >= 700)
+    repassados = query_base.join(subquery_rep, Bloco.bloco_id == subquery_rep.c.bloco_id)\
+                           .filter(subquery_rep.c.total >= 700).count()
+
+    # Pagos 30% (Tem pagamento OK e repasse < 700)
+    # Usamos outerjoin para garantir que pegamos quem tem pagamento mesmo sem repasse ainda
+    pagos = query_base.join(Pagamento30)\
+                      .filter(Pagamento30.pagamento30_pago == True)\
+                      .outerjoin(subquery_rep, Bloco.bloco_id == subquery_rep.c.bloco_id)\
+                      .filter(func.coalesce(subquery_rep.c.total, 0) < 700).count()
+
+    # Reservados (Tem responsável, mas pagamento30 não está como 'pago')
+    reservados = query_base.filter(Bloco.responsavel_id != None)\
+                           .filter(~Bloco.pagamento30.has(Pagamento30.pagamento30_pago == True))\
+                           .count()
+
+    # Disponíveis (O que sobrar da conta)
     disponiveis = total_count - (repassados + pagos + reservados)
 
-    # Dados para o Select de Clubes no Dashboard
+    # 4. Dados para o Select de Clubes (Ordenados como você gosta)
     clubes = Clube.query.order_by(Clube.clube_nome).all()
 
     return render_template("dashboard.html", 
