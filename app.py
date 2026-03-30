@@ -8,11 +8,26 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from sqlalchemy import func
 
 app = Flask(__name__)
-app.secret_key = "projeto_univesp_lais_2026"
+app.secret_key = "projeto_integrador_23"
 
 # Configurações
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:Lais2014@localhost/sistema_rifas'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://laisguer_univespadmin:univespadmin@laisguerra.com.br/laisguer_projeto_integrador_23'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "connect_args": {
+        "use_pure": True,
+        "connect_timeout": 5  # Se não conectar em 5s, ele desiste e te avisa
+    },
+    "pool_pre_ping": True,     # Testa a conexão antes de cada tentativa de login
+    "pool_recycle": 280,
+    "pool_size": 5,            # Limita o número de conexões abertas
+    "max_overflow": 0
+}
+app.config['SESSION_COOKIE_NAME'] = 'projeto_univesp_session'
+app.config['REMOTE_ADDR'] = '127.0.0.1'
+# Força o Flask a aceitar o cookie mesmo rodando local com banco remoto
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False  # Já que você não está usando HTTPS localmente
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads', 'comprovantes')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024 
@@ -23,23 +38,24 @@ db.init_app(app)
 def index():
     return render_template("index.html")
 
-from sqlalchemy import func
+
 
 @app.route("/listagem")
-# --- ROTA DE LISTAGEM (PROTEGIDA) ---
 @login_required
 def listagem():
     termo = request.args.get('busca', '').strip()
     status_filtro = request.args.get('status', '')
     entrega_filtro = request.args.get('entrega', '')
     
+    # Pega a página atual da URL, padrão é 1
+    page = request.args.get('page', 1, type=int)
+
     # Subquery para somar repasses de cada bloco
     subquery_repasses = db.session.query(
         Repasse70.bloco_id, 
         func.sum(Repasse70.repasse70_valor).label('total')
     ).group_by(Repasse70.bloco_id).subquery()
 
-    # AJUSTE AQUI: Usamos joinedload para garantir que Responsavel e Clube venham na consulta
     from sqlalchemy.orm import joinedload
     query = Bloco.query.options(
         joinedload(Bloco.responsavel).joinedload(Responsavel.clube)
@@ -47,7 +63,10 @@ def listagem():
      .outerjoin(Pagamento30)\
      .outerjoin(subquery_repasses, Bloco.bloco_id == subquery_repasses.c.bloco_id)
 
-    # --- BUSCA POR NOME, CLUBE, WHATSAPP OU NÚMERO INDIVIDUAL ---
+    # Use .asc() para ascendente (1, 2, 3...) ou .desc() se quisesse o inverso
+    query = query.order_by(Bloco.bloco_id.asc())
+
+    # --- FILTROS (Mantidos como estavam) ---
     if termo:
         if termo.isdigit():
             num = int(termo)
@@ -65,7 +84,6 @@ def listagem():
     if entrega_filtro:
         query = query.filter(Bloco.bloco_forma_entrega == entrega_filtro)
 
-    # --- LÓGICA DE FILTRO DE STATUS ---
     if status_filtro == 'disponivel':
         query = query.filter(Bloco.responsavel_id == None)\
                     .filter((~Bloco.pagamento30.has()) | (Pagamento30.pagamento30_pago == False))\
@@ -80,9 +98,17 @@ def listagem():
     elif status_filtro == 'repassado':
         query = query.filter(subquery_repasses.c.total >= 700)
 
-    blocos = query.all()
-    return render_template("listagem.html", blocos=blocos, termo=termo, 
-                           status_filtro=status_filtro, entrega_filtro=entrega_filtro)
+    # --- A MÁGICA DA PAGINAÇÃO ---
+    # per_page=20 define quantos blocos aparecem por vez
+    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    blocos = pagination.items 
+
+    return render_template("listagem.html", 
+                           blocos=blocos, 
+                           pagination=pagination, # Objeto para criar os botões no HTML
+                           termo=termo, 
+                           status_filtro=status_filtro, 
+                           entrega_filtro=entrega_filtro)
 
 @app.route("/bloco/<int:id_bloco>")
 def gerenciar_bloco(id_bloco):
@@ -254,7 +280,10 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return Usuario.query.get(int(user_id))
+    try:
+        return db.session.get(Usuario, int(user_id))
+    except:
+        return None
 
 # --- ROTA RAIZ: LOGIN ---
 @app.route("/", methods=['GET', 'POST'])
@@ -265,11 +294,24 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         senha = request.form.get('senha')
-        user = Usuario.query.filter_by(usuario_email=email).first()
-        if user and user.checar_senha(senha):
-            login_user(user)
-            return redirect(url_for('listagem'))
-        flash("E-mail ou senha incorretos.")
+        print(f"--- Tentando login para: {email} ---") # DEBUG
+        
+        try:
+            user = Usuario.query.filter_by(usuario_email=email).first()
+            print(f"--- Busca no banco finalizada. Usuário encontrado? {user is not None} ---") # DEBUG
+            
+            if user and user.checar_senha(senha):
+                print("--- Senha correta. Iniciando sessão... ---") # DEBUG
+                login_user(user)
+                print("--- Redirecionando para listagem... ---") # DEBUG
+                return redirect(url_for('listagem'))
+            
+            print("--- Falha: E-mail ou senha incorretos ---") # DEBUG
+            flash("E-mail ou senha incorretos.")
+        except Exception as e:
+            print(f"--- ERRO NO LOGIN: {e} ---") # DEBUG
+            flash("Erro de conexão com o servidor.")
+            
     return render_template("index.html")
 
 # --- ROTA DE REGISTRO (PÚBLICA) ---

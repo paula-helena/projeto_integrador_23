@@ -295,3 +295,64 @@ td {
     background-color: #c0392b;
     color: white;
 }
+
+
+/* PAGINATION */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .pagination-info {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .page-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.9em;
+            text-decoration: none !important;
+            transition: 0.3s;
+        }
+
+        .btn-prev {
+            border: 1px solid #ccc;
+            color: #333;
+            background: #fff;
+        }
+
+        .btn-prev:hover {
+            background: #f8f9fa;
+            border-color: #999;
+            color: #000;
+        }
+
+        .btn-next {
+            background: #1a73e8;
+            color: white !important;
+            border: 1px solid #1a73e8;
+        }
+
+        .btn-next:hover {
+            background: #1557b0;
+        }
+
+        .btn-disabled {
+            background: #e9ecef;
+            color: #adb5bd !important;
+            border: 1px solid #dee2e6;
+            cursor: not-allowed;
+        }
