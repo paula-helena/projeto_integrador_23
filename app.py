@@ -6,31 +6,11 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from models import db, Bloco, Clube, Responsavel, Pagamento30, Repasse70, Destinatario, Usuario
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import func
+from config import Config
 
 app = Flask(__name__)
-app.secret_key = "projeto_integrador_23"
+app.config.from_object(Config)
 
-# Configurações
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://laisguer_univespadmin:univespadmin@laisguerra.com.br/laisguer_projeto_integrador_23'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    "connect_args": {
-        "use_pure": True,
-        "connect_timeout": 5  # Se não conectar em 5s, ele desiste e te avisa
-    },
-    "pool_pre_ping": True,     # Testa a conexão antes de cada tentativa de login
-    "pool_recycle": 280,
-    "pool_size": 5,            # Limita o número de conexões abertas
-    "max_overflow": 0
-}
-app.config['SESSION_COOKIE_NAME'] = 'projeto_univesp_session'
-app.config['REMOTE_ADDR'] = '127.0.0.1'
-# Força o Flask a aceitar o cookie mesmo rodando local com banco remoto
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False  # Já que você não está usando HTTPS localmente
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads', 'comprovantes')
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024 
 
 db.init_app(app)
 
