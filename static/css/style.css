@@ -1,10 +1,27 @@
 /* ==========================================================================
    1. BASE - Estilos Gerais
    ========================================================================== */
-body {
+
+:root {
+    --bg: #f4f4f9;
+    --text: #333;
+    --card: #ffffff;
+    --primary: #1a73e8;
+    --border: #ddd;
+}
+
+.dark-mode {
+    --bg: #121212;
+    --text: #e4e4e4;
+    --card: #1e1e1e;
+    --primary: #4dabf7;
+    --border: #333;
+}
+
+   body {
     font-family: 'Segoe UI', Arial, sans-serif;
-    background-color: #f4f4f9;
-    color: #333;
+    background-color: var(--bg);
+    color: var(--text);
     margin: 0;
     padding: 0;
 }
@@ -31,10 +48,10 @@ a:hover {
 .container {
     max-width: 1100px;
     margin: 20px auto;
-    background: white;
+    background: var(--card);
     padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
 .main-nav {
@@ -113,15 +130,21 @@ td {
     color: #444; 
 }
 
-.form-group input, 
-.form-group select, 
-.form-group textarea { 
-    width: 100%; 
-    padding: 12px; 
-    border: 1px solid #ccc; 
-    border-radius: 5px; 
-    box-sizing: border-box; 
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px; /* mais suave */
     font-size: 14px;
+    transition: 0.2s;
+}
+
+.form-group input:focus {
+    border-color: #1a73e8;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(26,115,232,0.1);
 }
 
 .obs-box { 
@@ -137,7 +160,7 @@ td {
    5. DASHBOARD E FILTROS (Painel de Listagem)
    ========================================================================== */
 .filter-panel { 
-    background: white; 
+    background: var(--card); 
     padding: 20px; 
     border-radius: 8px; 
     margin-bottom: 30px; 
@@ -157,7 +180,7 @@ td {
 }
 
 .chart-card { 
-    background: white; 
+    background: var(--card); 
     padding: 20px; 
     border-radius: 8px; 
     box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
@@ -178,14 +201,19 @@ td {
     padding-top: 80px; 
 }
 
-.auth-container { 
-    background: white; 
-    padding: 40px; 
-    border-radius: 10px; 
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-    width: 100%; 
-    max-width: 400px; 
-    text-align: center; 
+.auth-container {
+    background: var(--card);
+    padding: 40px;
+    border-radius: 16px; /* mais moderno */
+    box-shadow: 0 15px 35px rgba(0,0,0,0.08); /* sombra mais suave */
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    transition: 0.3s;
+}
+
+.auth-container:hover {
+    transform: translateY(-2px);
 }
 
 .auth-container h2 { color: #1a73e8; margin-bottom: 10px; }
@@ -212,8 +240,18 @@ td {
     transition: background 0.3s;
 }
 
-.btn-auth { background-color: #1a73e8; }
-.btn-auth:hover { background-color: #1557b0; }
+.btn-auth {
+    background: linear-gradient(135deg, #1a73e8, #1557b0);
+    border-radius: 10px;
+    padding: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.btn-auth:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(26,115,232,0.3);
+}
 
 .btn-update { background-color: #28a745; width: auto; padding: 12px 25px; }
 .btn-update:hover { background-color: #218838; }
@@ -233,7 +271,15 @@ td {
 .repassado   { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; } 
 
 .valor { color: #28a745; font-weight: bold; }
-.flash-msg { color: #d93025; background: #fce8e6; padding: 12px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #fad2cf; text-align: center; font-size: 0.9em; }
+.flash-msg {
+    color: #d93025;
+    background: #fff5f5;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #d93025; /* detalhe moderno */
+    font-size: 0.9em;
+}
 
 
 /* ==========================================================================
